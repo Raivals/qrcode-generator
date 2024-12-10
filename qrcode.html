@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de QR Code</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #qrcode {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%; /* Assure une largeur de 100% */
+            height: 600px; /* Hauteur augmentée pour agrandir l'affichage du QR Code */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-container {
+            position: relative;
+        }
+
+        .qr-logo {
+            position: absolute;
+            top: 30%;
+            left: 30%;
+            width: 40%;
+            height: 40%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>Générateur de QR Code</h1>
+    
+    <div class="container">
+        <input type="text" id="text" placeholder="Entrez une URL ou un texte" />
+        <input type="file" id="logoInput" accept="image/*" style="display: none;" />
+        <button onclick="generateQR()">Générer le QR Code</button>
+        <button onclick="document.getElementById('logoInput').click();">Choisir un logo</button>
+        <button id="downloadBtn" style="display: none;" onclick="downloadQRCode()">Télécharger le QR Code</button>
+        
+        <div id="qrcode"></div>
+    </div>
+
+    <script>
+        let logoImage = null; // Variable pour stocker le logo sélectionné
+        let generatedCanvas = null; // Variable pour stocker le canvas généré du QR code
+
+        // Fonction pour générer le QR Code
+        function generateQR() {
+            const text = document.getElementById("text").value;
+            const qrCodeContainer = document.getElementById("qrcode");
+            const downloadBtn = document.getElementById("downloadBtn");
+
+            // Effacer l'ancien QR Code
+            qrCodeContainer.innerHTML = ""; 
+
+            if (text) {
+                // Créer le QR code de base avec une taille plus grande (500px)
+                QRCode.toCanvas(text, { width: 500, errorCorrectionLevel: 'H' }, (err, canvas) => {
+                    if (err) console.error(err);
+
+                    // Ajouter le QR code à la page
+                    const qrContainer = document.createElement("div");
+                    qrContainer.classList.add("qr-container");
+                    qrContainer.appendChild(canvas);
+                    
+                    // Ajouter le logo si nécessaire
+                    if (logoImage) {
+                        const qrCanvas = canvas;
+                        const ctx = qrCanvas.getContext("2d");
+
+                        // Calculer la position du logo au centre du QR code
+                        const qrSize = qrCanvas.width;
+                        const logoSize = qrSize / 5;  // Taille du logo (20% de la taille du QR Code)
+                        const x = (qrSize - logoSize) / 2;
+                        const y = (qrSize - logoSize) / 2;
+
+                        // Dessiner le logo sur le QR code
+                        ctx.drawImage(logoImage, x, y, logoSize, logoSize);
+                    }
+
+                    // Afficher le QR code dans la page
+                    qrCodeContainer.appendChild(qrContainer);
+                    generatedCanvas = canvas; // Sauvegarder le canvas pour le téléchargement
+                    downloadBtn.style.display = "inline"; // Afficher le bouton de téléchargement
+                });
+            } else {
+                alert("Veuillez entrer une URL ou un texte.");
+            }
+        }
+
+        // Fonction pour gérer l'ajout du logo sélectionné
+        document.getElementById('logoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        logoImage = img; // Stocker l'image du logo
+                    };
+                    img.src = event.target.result; // Charger l'image dans la variable logoImage
+                };
+                reader.readAsDataURL(file); // Lire le fichier comme une URL de données
+            }
+        });
+
+        // Fonction pour télécharger le QR Code en PNG
+        function downloadQRCode() {
+            if (generatedCanvas) {
+                const dataUrl = generatedCanvas.toDataURL("image/png"); // Convertir le canvas en PNG
+                const link = document.createElement("a");
+                link.href = dataUrl;
+                link.download = "qrcode.png"; // Nom du fichier téléchargé
+                link.click();
+            } else {
+                alert("Aucun QR Code à télécharger.");
+            }
+        }
+    </script>
+
+</body>
+</html>
